@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>WebServiceTest</title>
+		<script language="javascript">
+			var intCallID;
+
+			function init() {
+
+				//第一个参数是webservice的url，后面是名称
+				hello.useService("http://202.121.199.198/SJCJXT/webservicetest.asmx?WSDL", "ServiceTest");
+			}
+
+			function calltest() {
+				//如果该webservice有参数的话，在括号后加逗号分隔。
+				intCallID = hello.MyName.callService("ServiceTest", document.getElementsByName("name")[0].value); //no param
+			}
+
+			function callback_result() {
+				if((event.result.error) && (intCallID == event.result.id)) {
+					var xfaultcode = event.result.errorDetail.code;
+					var xfaultstring = event.result.errorDetail.string;
+					var xfaultsoap = event.result.errorDetail.raw;
+					// Add code to output error information here
+					alert(xfaultstring);
+				} else {
+					hello.innerHTML += "测试调用结果为：<br>" + event.result.value;
+				}
+
+			}
+		</script>
+	</head>
+
+	<body onload="init();">
+		<p>&nbsp;</p>
+		<label>姓名：
+  <input type="text" name="name" id="name" />
+  <br />
+  单位：
+  <input type="text" name="department" id="department" />
+  <br />
+</label>
+		<div id="hello" style="behavior:url(webservice.htc)" onresult="callback_result();"></div>
+		<input name="button" type="button" onClick="calltest();" value="调用测试" />
+	</body>
+
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+		<title></title>
+
+		<link href="//res.wx.qq.com/open/libs/weui/0.4.2/weui.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="css/weui2.css" />
+		<link rel="stylesheet" type="text/css" href="css/myStyle.css" />
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="js/zepto.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=E4805d16520de693a3fe707cdc962045"></script>
+		<script src="js/public.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var openid = getQueryString("openid");
+				if (typeof(openid) == "undefined" || openid == null) {
+					getUserOpenId();
+				}
+
+				$.ajax({
+					type: "get", //用POST方式传输
+					dataType: "jsonp", //数据格式:JSON
+					url: 'http://202.121.199.198/SJCJXT/Helper/DataHandler.ashx?action=getNowBooking&openid=' + openid, //?action=createJsApiList', //目标地址
+					async: false, //是否异步
+					jsonp: "callbackparam", //服务端用于接收callback调用的function名的参数
+					success: function(obj) {
+						if (obj[0].timeNow != 'null') {
+							$("#timeNow").val(obj[0].timeNow);
+							$("#roomId").val(obj[0].roomid);
+							$("#timeBooking").val(obj[0].timeBooking);
+
+						} else {
+							$.toast("无预约信息", "forbidden");
+						}
+
+					},
+					error: function(errormsg) {
+						console.log("getNowBooking");
+						console.log(errormsg);
+
+					}
+				});
+
+				var pageurl = location.href.split('#')[0];
+
+				$.ajax({
+					type: "get", //用POST方式传输
+					dataType: "jsonp", //数据格式:JSON
+					url: 'http://202.121.199.198/SJCJXT/Helper/DataHandler.ashx?action=createJsApiList&pageurl=' + pageurl, //?action=createJsApiList', //目标地址
+					async: false, //是否异步
+					jsonp: "jsapicallback", //服务端用于接收callback调用的function名的参数
+					success: function(obj) {
+						var result = obj;
+						//alert(result[0].signature);
+						wx.config({
+							debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+							appId: 'wx3ccd1d053dfe5fc5', // 必填，公众号的唯一标识
+							timestamp: result[0].timestamp, //1414587457,// $("#ContentPlaceHolder1_hidTimestamp").text(),//  // 必填，生成签名的时间戳
+							nonceStr: result[0].noncestr, //'Wm3WZYTPz0wzccnW',//$("#ContentPlaceHolder1_hidNonceStr").text(),//  // 必填，生成签名的随机串
+							signature: result[0].signature, //'7E2205A8F1EFD6E4E4E8910A3E2D54663880C659',//'66E2F0AC744BF6EFC2EFC4AD5759AE984A4781FE',// 必填，签名，见附录1
+							jsApiList: ['checkJsApi', 'onMenuShareTimeline', 'onMenuShareAppMessage', 'onMenuShareQQ', 'onMenuShareWeibo', 'hideMenuItems', 'showMenuItems',
+									'hideAllNonBaseMenuItem', 'showAllNonBaseMenuItem', 'translateVoice', 'startRecord', 'stopRecord', 'onRecordEnd', 'playVoice',
+									'pauseVoice', 'stopVoice', 'uploadVoice', 'downloadVoice', 'chooseImage', 'previewImage', 'uploadImage', 'downloadImage', 'getNetworkType',
+									'openLocation', 'getLocation', 'hideOptionMenu', 'showOptionMenu', 'closeWindow', 'scanQRCode', 'chooseWXPay', 'openProductSpecificView',
+									'addCard', 'chooseCard', 'openCard'
+								] // 必填，需要使用的JS接口列表，所有JS接口列表见附录2
+						});
+					},
+					error: function(errormsg) {
+						//						alert("获取失败");
+						console.log(errormsg);
+						$.toast("获取权限失败", "forbidden");
+					}
+				});
+			});
+
+			wx.ready(function() {
+
+				var latitude = 0.000; // 纬度，浮点数，范围为90 ~ -90
+				var longitude = 0.000; // 经度，浮点数，范围为180 ~ -180。
+				wx.getLocation({
+					type: 'gcj02', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+					success: function(res) {
+						latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+						longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+						var errMsg = res.errMsg;
+						var result_msg = "获取位置失败";
+						if (errMsg == "getLocation:ok") {
+							result_msg = "获取位置成功";
+						}
+						$("#location_msg").html(result_msg + ". 纬度：" + latitude + "，经度：" + longitude);
+					}
+				});
+			});
+		</script>
+		<script type="text/javascript">
+			//		$("#btnAlert").CLICK();
+			function btn_alert() {
+				if ($("#roomId").val() == "") {
+					//					$("#p_toast").text("房间号不可为空！");
+					//					$('#toast').show().delay(3000).hide(0);
+					$.toast("不可为空", "forbidden");
+					$('#icon_warn').show();
+					//alert("房间号不可为空！");
+					return;
+				} else {
+					var room = $("#roomId").val();
+					$.ajax({
+						type: "get",
+						async: false,
+						url: "http://202.121.199.198/SJCJXT/Helper/DataHandler.ashx?action=addLabAlert&openid=" + openid,
+						dataType: "jsonp",
+						jsonp: "callbackparam", //服务端用于接收callback调用的function名的参数
+						jsonpCallback: "success_jsonpCallback", //callback的function名称
+						success: function(json) {
+							//						$("#p_toast").text("房间" + json[0].room + "报警成功");
+							//						$('#toast').show().delay(3000).hide(0);
+							if (json[0].r != "1") {
+								$.toast("报警失败");
+								$('#icon_warn').hide(0);
+
+							} else {
+								$.toast("已成功报警");
+								//							$("#div_result").html("房间" + json[0].room + "报警成功");
+								//							$('#dialog2').show();
+								$('#icon_warn').hide(0);
+								return;
+							}
+
+						},
+						error: function() {
+							//							alert('fail');
+							$.toast("服务器错误", "forbidden");
+
+						}
+					});
+				}
+			}
+			$(function() {
+				$('#ok1').click(function() {
+					$('#dialog2').hide();
+				})
+			})
+		</script>
+
+	</head>
+
+	<body ontouchstart>
+		<div class="box" style="padding: 10px;">
+			<div class="cell">
+				<div class="hd">
+					<h1 class="page_title">实验室报警</h1>
+				</div>
+
+				<div class="weui_cells weui_cells_form">
+
+					<div class="weui_cell">
+
+						<div class="weui_cell_hd">
+							<label class="weui_label">房间号</label>
+						</div>
+						<div class="weui_cell_bd weui_cell_primary">
+							<input id="roomId" class="weui_input" type="text" readonly="true" />
+						</div>
+						<div class="weui_cell_ft">
+							<i id="icon_warn" class="weui_icon_warn" style="display: none;"></i>
+						</div>
+					</div>
+					<div class="weui_cell">
+						<div class="weui_cell_hd">
+							<label class="weui_label">当前时间</label>
+						</div>
+						<div class="weui_cell_bd weui_cell_primary">
+							<input id="timeNow" class="weui_input" type="text" readonly="true" />
+						</div>
+					</div>
+					<div class="weui_cell">
+						<div class="weui_cell_hd">
+							<label class="weui_label">预约时间</label>
+						</div>
+						<div class="weui_cell_bd weui_cell_primary">
+							<input id="timeBooking" class="weui_input" type="text" readonly="true" />
+						</div>
+
+					</div>
+				</div>
+				<div id="location_msg" class="weui_cells_tips"></div>
+
+				<br/>
+				<div class="bd spacing">
+					<button id="btnAlert" onclick="btn_alert()" class="weui_btn weui_btn_warn">报警</button>
+				</div>
+				<br/>
+
+				<!--toast提示-->
+				<div id="toast" style="display: none;">
+					<div class="weui_mask_transparent"></div>
+					<div class="weui_toast_forbidden">
+						<i class="weui_icon_toast"></i>
+						<label id="p_toast" class="weui_toast_content">已完成</p>					
+				</div>
+			</div>
+	
+			<!-- dialog 报警结果提示-->
+			<div class="weui_dialog_alert" id="dialog2" style="display: none;">
+				<div class="weui_mask"></div>
+				<div class="weui_dialog">
+					<div class="weui_dialog_hd"><strong class="weui_dialog_title">报警结果</strong></div>
+					<div id="div_result" class="weui_dialog_bd"></div>
+					<div class="weui_dialog_ft">
+						<a id="ok1" href="javascript:;" class="weui_btn_dialog primary">确定</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+
+</html>
